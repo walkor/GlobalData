@@ -2,6 +2,7 @@
 namespace GlobalData;
 /**
  *  Global data client.
+ *  @version 1.0.0
  */
 class Client 
 {
