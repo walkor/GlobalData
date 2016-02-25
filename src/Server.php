@@ -62,22 +62,38 @@ class Server
                 break;
             case 'set':
                 $this->_dataArray[$key] = $data['value'];
-                $connection->send('ok');
+                $connection->send('b:1;');
+                break;
+            case 'add':
+                if(isset($this->_dataArray[$key]))
+                {
+                    return $connection->send('b:0;');
+                }
+                $this->_dataArray[$key] = $data['value'];
+                return $connection->send('b:1;');
+                break;
+            case 'increment':
+                if(!isset($this->_dataArray[$key]))
+                {
+                    return $connection->send('b:0;');
+                }
+                $this->_dataArray[$key] = (int)$this->_dataArray[$key]+$data['step'];
+                return $connection->send($this->_dataArray[$key]);
                 break;
             case 'cas':
                 if(!isset($this->_dataArray[$key]) || md5($this->_dataArray[$key]) === $data['md5'])
                 {
                     $this->_dataArray[$key] = $data['value'];
-                    return $connection->send('ok');
+                    return $connection->send('b:1;');
                 }
-                $connection->send('mismatch');
+                $connection->send('s:8:"mismatch"');
                 break;
             case 'delete':
                 unset($this->_dataArray[$key]);
-                $connection->send('ok');
+                $connection->send('b:1;');
                 break;
             default:
-                $connection->close('bad cmd '. $cmd);
+                $connection->close(serialize('bad cmd '. $cmd));
         }
     }
 }

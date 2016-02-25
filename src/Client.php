@@ -147,7 +147,39 @@ class Client
            'key'     => $key,
            'value'   => serialize($new_value),
         ),$connection);
-        return "ok" === $this->readFromRemote($connection);
+        return unserialize($this->readFromRemote($connection));
+    }
+    
+    /**
+     * Add.
+     * @param string $key
+     * @throws \Exception
+     */
+    public function add($key, $value)
+    {
+        $connection = $this->getConnection($key);
+        $this->writeToRemote(array(
+                'cmd' => 'add',
+                'key' => $key,
+                'value' => serialize($value),
+        ), $connection);
+        return unserialize($this->readFromRemote($connection));
+    }
+    
+    /**
+     * Increment.
+     * @param string $key
+     * @throws \Exception
+     */
+    public function increment($key, $step = 1)
+    {
+        $connection = $this->getConnection($key);
+        $this->writeToRemote(array(
+                'cmd' => 'increment',
+                'key' => $key,
+                'step' => $step,
+        ), $connection);
+        return unserialize($this->readFromRemote($connection));
     }
 
     /**
