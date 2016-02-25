@@ -7,22 +7,22 @@ namespace GlobalData;
 class Client 
 {
     /**
-     * Global server ip.
-     * @var string
-     */
-    protected $_globalServerIP = null;
-    
-    /**
-     * Global server port..
+     * Timeout.
      * @var int
      */
-    protected $_globalServerPort = null;
+    public $timeout = 5;
+    
+    /**
+     * Global data server address.
+     * @var array
+     */
+    protected $_globalServers = array();
     
     /**
      * Connection to global server.
      * @var resource
      */
-    protected $_globalConnection = null;
+    protected $_globalConnections = null;
     
     /**
      * Cache.
@@ -32,41 +32,49 @@ class Client
     
     /**
      * Construct.
-     * @param string $global_server_ip
-     * @param int $global_server_port
+     * @param array/string $servers
      */
-    public function __construct($global_server_ip = '127.0.0.1', $global_server_port = 2207)
+    public function __construct($servers)
     {
-        $this->_globalServerIP = $global_server_ip;
-        $this->_globalServerPort = $global_server_port;
-        $this->connect();
+        if(empty($servers))
+        {
+            throw new \Exception('servers empty');
+        }
+        $this->_globalServers = array_values((array)$servers);
     }
 
     /**
      * Connect to global server.
      * @throws \Exception
      */
-    protected function connect()
+    protected function getConnection($key)
     {
-        $this->_globalConnection = stream_socket_client("tcp://{$this->_globalServerIP}:{$this->_globalServerPort}", $code, $msg, 5);
-        if(!$this->_globalConnection)
+        $offset = crc32($key)%count($this->_globalServers);
+        if($offset < 0)
+        {
+            $offset = -$offset;
+        }
+        
+        if(isset($this->_globalConnections[$offset]))
+        {
+            continue;
+        }
+        $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, 5);
+        if(!$connection)
         {
             throw new \Exception($msg);
         }
-        if(function_exists('socket_import_stream'))
+        stream_set_timeout($connection, 5);
+        if(class_exists('Workerman\Lib\Timer'))
         {
-            $socket   = socket_import_stream($this->_globalConnection);
-            socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-            socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+            Workerman\Lib\Timer::add(25, function($connection)
+            {
+                fwrite($connection, pack('N', 8)."ping");
+            }, array($connection));
         }
-        stream_set_timeout($this->_globalConnection, 5);
-        if($this->_globalServerIP !== '127.0.0.1' && class_exists('Workerman\Lib\Timer'))
-        {
-            Workerman\Lib\Timer::add(25, function($socket){
-                fwrite($socket, "ping\n");
-            }, array($this->_globalConnection));
-        } 
+        $this->_globalConnections[$offset] = $connection;
     }
+    
 
     /**
      * Magic methods __set.
@@ -76,12 +84,13 @@ class Client
      */
     public function __set($key, $value) 
     {
+        $connection = $this->getConnection($key);
         $this->writeToRemote(array(
            'cmd'   => 'set',
            'key'   => $key,
            'value' => serialize($value),
-        ));
-        $this->readFromRemote();
+        ), $connection);
+        $this->readFromRemote($connection);
     }
 
     /**
@@ -100,11 +109,12 @@ class Client
      */
     public function __unset($key) 
     {
+        $connection = $this->getConnection($key);
         $this->writeToRemote(array(
            'cmd' => 'delete',
            'key' => $key
-        ));
-        $this->readFromRemote();
+        ), $connection);
+        $this->readFromRemote($connection);
     }
   
     /**
@@ -114,11 +124,12 @@ class Client
      */
     public function __get($key)
     {
+        $connection = $this->getConnection($key);
         $this->writeToRemote(array(
            'cmd' => 'get',
            'key' => $key,
-        ));
-        return unserialize($this->readFromRemote());
+        ), $connection);
+        return unserialize($this->readFromRemote($connection));
     }
 
     /**
@@ -129,24 +140,25 @@ class Client
      */
     public function cas($key, $old_value, $new_value)
     {
+        $connection = $this->getConnection($key);
         $this->writeToRemote(array(
            'cmd'     => 'cas',
            'md5' => md5(serialize($old_value)),
            'key'     => $key,
            'value'   => serialize($new_value),
-        ));
-        return "ok" === $this->readFromRemote();
+        ),$connection);
+        return "ok" === $this->readFromRemote($connection);
     }
 
     /**
      * Write data to global server.
      * @param string $buffer
      */
-    protected function writeToRemote($data)
+    protected function writeToRemote($data, $connection)
     {
         $buffer = serialize($data);
         $buffer = pack('N',4 + strlen($buffer)) . $buffer;
-        $len = fwrite($this->_globalConnection, $buffer);
+        $len = fwrite($connection, $buffer);
         if($len !== strlen($buffer))
         {
             throw new \Exception('writeToRemote fail');
@@ -157,14 +169,14 @@ class Client
      * Read data from global server.
      * @throws Exception
      */
-    protected function readFromRemote()
+    protected function readFromRemote($connection)
     {
         $all_buffer = '';
         $total_len = 4;
         $head_read = false;
         while(1)
         {
-            $buffer = fread($this->_globalConnection, 8192);
+            $buffer = fread($connection, 8192);
             if($buffer === '' || $buffer === false)
             {
                 throw new \Exception('readFromRemote fail');
