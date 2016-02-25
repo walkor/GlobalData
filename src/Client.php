@@ -55,24 +55,24 @@ class Client
             $offset = -$offset;
         }
         
-        if(isset($this->_globalConnections[$offset]))
+        if(!isset($this->_globalConnections[$offset]))
         {
-            continue;
-        }
-        $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, 5);
-        if(!$connection)
-        {
-            throw new \Exception($msg);
-        }
-        stream_set_timeout($connection, 5);
-        if(class_exists('Workerman\Lib\Timer'))
-        {
-            Workerman\Lib\Timer::add(25, function($connection)
+            $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, 5);
+            if(!$connection)
             {
-                fwrite($connection, pack('N', 8)."ping");
-            }, array($connection));
+                throw new \Exception($msg);
+            }
+            stream_set_timeout($connection, 5);
+            if(class_exists('Workerman\Lib\Timer'))
+            {
+                Workerman\Lib\Timer::add(25, function($connection)
+                {
+                    fwrite($connection, pack('N', 8)."ping");
+                }, array($connection));
+            }
+            $this->_globalConnections[$offset] = $connection;
         }
-        $this->_globalConnections[$offset] = $connection;
+        return $this->_globalConnections[$offset];
     }
     
 
