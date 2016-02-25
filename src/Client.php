@@ -90,7 +90,7 @@ class Client
      */
     public function __isset($key)
     {
-        return !null === $this->__get($key);
+        return null !== $this->__get($key);
     }
 
     /**
