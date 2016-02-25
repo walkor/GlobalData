@@ -177,7 +177,7 @@ class Client
                 {
                     break;
                 }
-                $unpack_data = unpack('Ntotal_length', $head_read);
+                $unpack_data = unpack('Ntotal_length', $all_buffer);
                 $total_len = $unpack_data['total_length'];
                 if($recv_len >= $total_len)
                 {
