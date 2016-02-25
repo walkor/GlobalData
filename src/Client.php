@@ -76,12 +76,11 @@ class Client
      */
     public function __set($key, $value) 
     {
-        $buffer = serialize(array(
+        $this->writeToRemote(array(
            'cmd'   => 'set',
            'key'   => $key,
            'value' => serialize($value),
-        ))."\n";
-        $this->writeToRemote($buffer);
+        ));
         $this->readFromRemote();
     }
 
@@ -101,11 +100,10 @@ class Client
      */
     public function __unset($key) 
     {
-        $buffer = serialize(array(
+        $this->writeToRemote(array(
            'cmd' => 'delete',
            'key' => $key
-        ))."\n";
-        $this->writeToRemote($buffer);
+        ));
         $this->readFromRemote();
     }
   
@@ -116,12 +114,11 @@ class Client
      */
     public function __get($key)
     {
-        $buffer = serialize(array(
+        $this->writeToRemote(array(
            'cmd' => 'get',
            'key' => $key,
-        ))."\n";
-        $this->writeToRemote($buffer);
-        return unserialize(rtrim($this->readFromRemote(), "\n"));
+        ));
+        return unserialize($this->readFromRemote());
     }
 
     /**
@@ -132,22 +129,23 @@ class Client
      */
     public function cas($key, $old_value, $new_value)
     {
-        $buffer = serialize(array(
+        $this->writeToRemote(array(
            'cmd'     => 'cas',
            'md5' => md5(serialize($old_value)),
            'key'     => $key,
            'value'   => serialize($new_value),
-        ))."\n";
-        $this->writeToRemote($buffer);
-        return "ok\n" === $this->readFromRemote();
+        ));
+        return "ok" === $this->readFromRemote();
     }
 
     /**
      * Write data to global server.
      * @param string $buffer
      */
-    protected function writeToRemote($buffer)
+    protected function writeToRemote($data)
     {
+        $buffer = serialize($data);
+        $buffer = pack('N',4 + strlen($buffer)) . $buffer;
         $len = fwrite($this->_globalConnection, $buffer);
         if($len !== strlen($buffer))
         {
@@ -162,6 +160,8 @@ class Client
     protected function readFromRemote()
     {
         $all_buffer = '';
+        $total_len = 4;
+        $head_read = false;
         while(1)
         {
             $buffer = fread($this->_globalConnection, 8192);
@@ -170,11 +170,22 @@ class Client
                 throw new \Exception('readFromRemote fail');
             }
             $all_buffer .= $buffer;
-            if($all_buffer[strlen($all_buffer)-1] === "\n")
+            $recv_len = strlen($all_buffer);
+            if($recv_len >= $total_len)
             {
-                break;
+                if($head_read)
+                {
+                    break;
+                }
+                $unpack_data = unpack('Ntotal_length', $head_read);
+                $total_len = $unpack_data['total_length'];
+                if($recv_len >= $total_len)
+                {
+                    break;
+                }
+                $head_read = true;
             }
         }
-        return $all_buffer;
+        return substr($all_buffer, 4);
     }
 }
