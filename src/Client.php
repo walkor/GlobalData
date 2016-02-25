@@ -88,7 +88,7 @@ class Client
         $this->writeToRemote(array(
            'cmd'   => 'set',
            'key'   => $key,
-           'value' => serialize($value),
+           'value' => $value,
         ), $connection);
         $this->readFromRemote($connection);
     }
@@ -129,7 +129,7 @@ class Client
            'cmd' => 'get',
            'key' => $key,
         ), $connection);
-        return unserialize($this->readFromRemote($connection));
+        return $this->readFromRemote($connection);
     }
 
     /**
@@ -145,9 +145,9 @@ class Client
            'cmd'     => 'cas',
            'md5' => md5(serialize($old_value)),
            'key'     => $key,
-           'value'   => serialize($new_value),
+           'value'   => $new_value,
         ),$connection);
-        return unserialize($this->readFromRemote($connection));
+        return $this->readFromRemote($connection);
     }
     
     /**
@@ -161,9 +161,9 @@ class Client
         $this->writeToRemote(array(
                 'cmd' => 'add',
                 'key' => $key,
-                'value' => serialize($value),
+                'value' => $value,
         ), $connection);
-        return unserialize($this->readFromRemote($connection));
+        return $this->readFromRemote($connection);
     }
     
     /**
@@ -179,7 +179,7 @@ class Client
                 'key' => $key,
                 'step' => $step,
         ), $connection);
-        return unserialize($this->readFromRemote($connection));
+        return $this->readFromRemote($connection);
     }
 
     /**
@@ -230,6 +230,6 @@ class Client
                 $head_read = true;
             }
         }
-        return substr($all_buffer, 4);
+        return unserialize(substr($all_buffer, 4));
     }
 }

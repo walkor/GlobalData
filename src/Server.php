@@ -47,7 +47,7 @@ class Server
         $data = unserialize($buffer);
         if(!$buffer || !isset($data['cmd']) || !isset($data['key']))
         {
-            return $connection->close('bad request');
+            return $connection->close(serialize('bad request'));
         }
         $cmd = $data['cmd'];
         $key = $data['key'];
@@ -58,7 +58,7 @@ class Server
                 {
                    return $connection->send('N;');
                 }
-                return $connection->send($this->_dataArray[$key]);
+                return $connection->send(serialize($this->_dataArray[$key]));
                 break;
             case 'set':
                 $this->_dataArray[$key] = $data['value'];
@@ -78,15 +78,15 @@ class Server
                     return $connection->send('b:0;');
                 }
                 $this->_dataArray[$key] = (int)$this->_dataArray[$key]+$data['step'];
-                return $connection->send($this->_dataArray[$key]);
+                return $connection->send(serialize($this->_dataArray[$key]));
                 break;
             case 'cas':
-                if(!isset($this->_dataArray[$key]) || md5($this->_dataArray[$key]) === $data['md5'])
+                if(isset($this->_dataArray[$key]) && md5(serialize($this->_dataArray[$key])) === $data['md5'])
                 {
                     $this->_dataArray[$key] = $data['value'];
                     return $connection->send('b:1;');
                 }
-                $connection->send('s:8:"mismatch"');
+                $connection->send('b:0;');
                 break;
             case 'delete':
                 unset($this->_dataArray[$key]);
