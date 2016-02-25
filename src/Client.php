@@ -63,9 +63,9 @@ class Client
                 throw new \Exception($msg);
             }
             stream_set_timeout($connection, 5);
-            if(class_exists('Workerman\Lib\Timer'))
+            if(class_exists('\Workerman\Lib\Timer'))
             {
-                Workerman\Lib\Timer::add(25, function($connection)
+                \Workerman\Lib\Timer::add(25, function($connection)
                 {
                     fwrite($connection, pack('N', 8)."ping");
                 }, array($connection));
