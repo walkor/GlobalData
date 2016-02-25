@@ -2,7 +2,7 @@
 use GlobalData\Client;
 require_once __DIR__ . '/../src/Client.php';
 
-$global = new Client();
+$global = new Client('127.0.0.1:2207');
 
 echo "\n\nisset(\$global->abc)=";
 var_export(isset($global->abc));
