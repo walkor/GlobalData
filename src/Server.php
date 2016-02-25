@@ -77,7 +77,11 @@ class Server
                 {
                     return $connection->send('b:0;');
                 }
-                $this->_dataArray[$key] = (int)$this->_dataArray[$key]+$data['step'];
+                if(!is_numeric($this->_dataArray[$key]))
+                {
+                    $this->_dataArray[$key] = 0;
+                }
+                $this->_dataArray[$key] = $this->_dataArray[$key]+$data['step'];
                 return $connection->send(serialize($this->_dataArray[$key]));
                 break;
             case 'cas':
