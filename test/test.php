@@ -16,6 +16,9 @@ unset($global->abc);
 echo "\nnow \$global->abc=";
 var_export($global->abc);
 
+echo "\n\nisset(\$global->abc)=";
+var_export(isset($global->abc));
+
 echo ";\n\nset \$global->abc=";
 $global->abc = array(1,2,3);
 var_export($global->abc);
