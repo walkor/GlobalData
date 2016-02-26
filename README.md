@@ -16,7 +16,7 @@ Worker::runAll();
 ```php
 require_once __DIR__ . '/../src/Client.php';
 
-$global = new GlobalData\Client('127.0.0.1', 2207);
+$global = new GlobalData\Client('127.0.0.1:2207');
 
 var_export(isset($global->abc));
 $global->abc = array(1,2,3);
