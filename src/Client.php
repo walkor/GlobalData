@@ -57,12 +57,12 @@ class Client
         
         if(!isset($this->_globalConnections[$offset]))
         {
-            $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, 5);
+            $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, $this->timeout);
             if(!$connection)
             {
                 throw new \Exception($msg);
             }
-            stream_set_timeout($connection, 5);
+            stream_set_timeout($connection, $this->timeout);
             if(class_exists('\Workerman\Lib\Timer'))
             {
                 \Workerman\Lib\Timer::add(25, function($connection)
