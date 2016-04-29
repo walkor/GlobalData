@@ -2,7 +2,7 @@
 namespace GlobalData;
 /**
  *  Global data client.
- *  @version 1.0.0
+ *  @version 1.0.1
  */
 class Client 
 {
@@ -11,6 +11,12 @@ class Client
      * @var int
      */
     public $timeout = 5;
+    
+    /**
+     * Heartbeat interval.
+     * @var int
+     */
+    public $pingInterval = 25;
     
     /**
      * Global data server address.
@@ -55,7 +61,7 @@ class Client
             $offset = -$offset;
         }
         
-        if(!isset($this->_globalConnections[$offset]))
+        if(!isset($this->_globalConnections[$offset]) || feof($this->_globalConnections[$offset]))
         {
             $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, $this->timeout);
             if(!$connection)
@@ -65,9 +71,14 @@ class Client
             stream_set_timeout($connection, $this->timeout);
             if(class_exists('\Workerman\Lib\Timer'))
             {
-                \Workerman\Lib\Timer::add(25, function($connection)
+                $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection, &$timer_id)
                 {
-                    fwrite($connection, pack('N', 8)."ping");
+                    $buffer = pack('N', 8)."ping";
+                    if(strlen($buffer) !== fwrite($connection, $buffer))
+                    {
+                        @fclose($connection);
+                        \Workerman\Lib\Timer::del($timer_id);
+                    }
                 }, array($connection));
             }
             $this->_globalConnections[$offset] = $connection;
