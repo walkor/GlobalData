@@ -74,7 +74,7 @@ class Client
                 $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection)use(&$timer_id)
                 {
                     $buffer = pack('N', 8)."ping";
-                    if(strlen($buffer) !== fwrite($connection, $buffer))
+                    if(strlen($buffer) !== @fwrite($connection, $buffer))
                     {
                         @fclose($connection);
                         \Workerman\Lib\Timer::del($timer_id);
