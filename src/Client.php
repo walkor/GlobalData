@@ -71,7 +71,7 @@ class Client
             stream_set_timeout($connection, $this->timeout);
             if(class_exists('\Workerman\Lib\Timer'))
             {
-                $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection, &$timer_id)
+                $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection)use(&$timer_id)
                 {
                     $buffer = pack('N', 8)."ping";
                     if(strlen($buffer) !== fwrite($connection, $buffer))
