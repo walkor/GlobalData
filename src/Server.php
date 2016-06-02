@@ -29,7 +29,8 @@ class Server
         $worker = new Worker("frame://$ip:$port");
         $worker->count = 1;
         $worker->name = 'globalDataServer';
-        $worker->onMessage = array($this, 'onMessage') ;
+        $worker->onMessage = array($this, 'onMessage');
+        $worker->reloadable = false;
         $this->_worker = $worker; 
     }
     
