@@ -69,7 +69,7 @@ class Client
                 throw new \Exception($msg);
             }
             stream_set_timeout($connection, $this->timeout);
-            if(class_exists('\Workerman\Lib\Timer'))
+            if(class_exists('\Workerman\Lib\Timer') && php_sapi_name() === 'cli')
             {
                 $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection)use(&$timer_id)
                 {
