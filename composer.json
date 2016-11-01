@@ -1,6 +1,6 @@
 {
     "name"  : "workerman/globaldata",
-    "type"  : "project",
+    "type"  : "library",
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
     "require": {
