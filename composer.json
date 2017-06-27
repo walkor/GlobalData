@@ -1,5 +1,5 @@
 {
-    "name"  : "workerman/globaldata",
+    "name"  : "fizechan/globaldata",
     "type"  : "library",
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
