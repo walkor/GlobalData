@@ -61,7 +61,7 @@ class Client
             $offset = -$offset;
         }
         
-        if(!isset($this->_globalConnections[$offset]) || feof($this->_globalConnections[$offset]))
+        if(!isset($this->_globalConnections[$offset]) || !is_resource($this->_globalConnections[$offset]) || feof($this->_globalConnections[$offset]))
         {
             $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, $this->timeout);
             if(!$connection)
