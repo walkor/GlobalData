@@ -86,7 +86,8 @@ class Server
                 return $connection->send(serialize($this->_dataArray[$key]));
                 break;
             case 'cas':
-                if(!isset($this->_dataArray[$key]) || md5(serialize($this->_dataArray[$key])) === $data['md5'])
+                $old_value = !isset($this->_dataArray[$key]) ? null : $this->_dataArray[$key];
+                if(md5(serialize($old_value)) === $data['md5'])
                 {
                     $this->_dataArray[$key] = $data['value'];
                     return $connection->send('b:1;');
