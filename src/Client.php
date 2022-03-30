@@ -69,15 +69,15 @@ class Client
                 throw new \Exception($msg);
             }
             stream_set_timeout($connection, $this->timeout);
-            if(class_exists('\Workerman\Lib\Timer') && php_sapi_name() === 'cli')
+            if(class_exists('\Workerman\Timer') && php_sapi_name() === 'cli')
             {
-                $timer_id = \Workerman\Lib\Timer::add($this->pingInterval, function($connection)use(&$timer_id)
+                $timer_id = \Workerman\Timer::add($this->pingInterval, function($connection)use(&$timer_id)
                 {
                     $buffer = pack('N', 8)."ping";
                     if(strlen($buffer) !== @fwrite($connection, $buffer))
                     {
                         @fclose($connection);
-                        \Workerman\Lib\Timer::del($timer_id);
+                        \Workerman\Timer::del($timer_id);
                     }
                 }, array($connection));
             }
