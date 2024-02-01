@@ -38,7 +38,7 @@ class Client
     
     /**
      * Construct.
-     * @param array/string $servers
+     * @param array | string $servers
      */
     public function __construct($servers)
     {
