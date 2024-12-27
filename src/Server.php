@@ -1,5 +1,6 @@
 <?php
 namespace GlobalData;
+use Workerman\Protocols\Frame;
 use Workerman\Worker;
 
 /**
@@ -26,7 +27,13 @@ class Server
      */
     public function __construct($ip = '0.0.0.0', $port = 2207)
     {
-        $worker = new Worker("frame://$ip:$port");
+        if (strpos($ip, 'unix://') === 0) {
+            $worker           = new Worker($ip);
+            $worker->protocol = Frame::class;
+        } else {
+            $worker = new Worker("frame://$ip:$port");
+        }
+
         $worker->count = 1;
         $worker->name = 'globalDataServer';
         $worker->onMessage = array($this, 'onMessage');

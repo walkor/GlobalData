@@ -63,7 +63,12 @@ class Client
         
         if(!isset($this->_globalConnections[$offset]) || !is_resource($this->_globalConnections[$offset]) || feof($this->_globalConnections[$offset]))
         {
-            $connection = stream_socket_client("tcp://{$this->_globalServers[$offset]}", $code, $msg, $this->timeout);
+            $address = $this->_globalServers[$offset];
+            if(strpos($address,'unix://')!==0){
+                $address = "tcp://{$address}";
+            }
+
+            $connection = stream_socket_client($address, $code, $msg, $this->timeout);
             if(!$connection)
             {
                 throw new \Exception($msg);
